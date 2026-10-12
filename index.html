@@ -27,15 +27,15 @@ const CONFIG = {
     sq: [
       "Naja Private Villa ndodhet në Lodtunduh, një fshat i qetë 3 km në jug të qendrës së Ubudit. Pylli i Majmunëve është 2.7 km larg dhe Muzeu ARMA dy minuta me makinë.",
       "E gjithë vila është e juaja. Çdo vilë ka pishinën e vet infinity, kopsht dhe tarracë me pamje nga pishina, kuzhinë të plotë, kondicioner dhe Wi-Fi falas. Ka një vilë me një dhomë për deri në tre persona dhe një vilë me dy dhoma për deri në gjashtë.",
-      "Mëngjesi mund të shërbehet në vilë çdo mëngjes. Mund të merrni me qira biçikleta dhe makina, parkimi është falas dhe stafi organizon transferimin nga aeroporti."
+      "Mëngjesi është i përfshirë dhe shërbehet në vilë çdo mëngjes. Mund të merrni me qira biçikleta dhe makina, parkimi është falas dhe stafi organizon transferimin nga aeroporti."
     ]
   },
   guests: 6,
   bedrooms: 2,
   bathrooms: 2,                // please verify
   beachDistance: "3 km",       // shown as "to Ubud centre"
-  priceFrom: 300,              // per night — from a listing site, please verify
-  currency: "USD",
+  priceFrom: 80,               // per night, 1-bedroom villa with breakfast (owner: IDR 1,500,000)
+  currency: "EUR",
   platformCommission: 0.18,
   defaultNights: 7,
 
@@ -62,15 +62,15 @@ const CONFIG = {
 
   // Rooms shown in the booking popup (name, max guests, price per night)
   rooms: [
-    { name: { en: "One-bedroom pool villa", sq: "Vilë me një dhomë dhe pishinë" }, guests: 3, price: 300 },
-    { name: { en: "Two-bedroom pool villa", sq: "Vilë me dy dhoma dhe pishinë" }, guests: 6, price: 450 }
+    { name: { en: "One-bedroom pool villa", sq: "Vilë me një dhomë dhe pishinë" }, guests: 3, price: 80 },
+    { name: { en: "Two-bedroom pool villa", sq: "Vilë me dy dhoma dhe pishinë" }, guests: 6, price: 110 }   // owner: IDR 2,000,000
   ],
   // Booked nights: [check-in, check-out) — demo dates, replace with real ones
   bookedDates: [["2026-10-14","2026-10-18"], ["2026-10-24","2026-10-27"], ["2026-11-06","2026-11-09"]],
 
-  phone: "+62 812-3936-7929",  // from a listing site — please verify
-  whatsapp: "6281239367929",   // please verify, digits only
-  email: "your@email.com",     // TODO: owner's email
+  phone: "+62 812-3936-7929",  // confirmed by the owner
+  whatsapp: "6281239367929",   // confirmed by the owner
+  email: "wayan_naja@yahoo.com",
   map: { lat: -8.53484, lng: 115.26068, zoom: 16 },
 
   // Replace with the villa's own photos
