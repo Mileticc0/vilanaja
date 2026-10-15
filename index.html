@@ -127,7 +127,7 @@ const STRINGS = {
     bookKicker:"Reservation", bookTitle:"Check availability",
     bookIntro:"Send us your dates and we'll reply on WhatsApp.",
     arrival:"Arrival", departure:"Departure", guestsN:"Number of guests", yourName:"Your name", message:"Message (optional)",
-    msgPh:"Anything we should know?", sendWa:"Send on WhatsApp", call:"Call", emailBtn:"Email", or:"or contact us directly",
+    msgPh:"Anything we should know?", sendWa:"Book", call:"Call", emailBtn:"Email", or:"or contact us directly",
     estimate:"{n} nights · from {total}", errDates:"Please choose a departure date after arrival.", errName:"Please enter your name.",
     waIntro:"Hello! I'd like to book {villa}.", waArrival:"Arrival", waDeparture:"Departure", waGuests:"Guests", waName:"Name", waMsg:"Message",
     revKicker:"Reviews", revTitle:"What our guests say", revAll:"See all reviews on Google",
@@ -152,7 +152,7 @@ const STRINGS = {
     bookKicker:"Rezervim", bookTitle:"Kontrolloni disponueshmërinë",
     bookIntro:"Na dërgoni datat dhe do t'ju përgjigjemi në WhatsApp.",
     arrival:"Mbërritja", departure:"Largimi", guestsN:"Numri i mysafirëve", yourName:"Emri juaj", message:"Mesazh (opsional)",
-    msgPh:"Diçka që duhet të dimë?", sendWa:"Dërgo në WhatsApp", call:"Telefono", emailBtn:"Email", or:"ose na kontaktoni direkt",
+    msgPh:"Diçka që duhet të dimë?", sendWa:"Rezervo", call:"Telefono", emailBtn:"Email", or:"ose na kontaktoni direkt",
     estimate:"{n} netë · nga {total}", errDates:"Zgjidhni një datë largimi pas mbërritjes.", errName:"Ju lutem shkruani emrin tuaj.",
     waIntro:"Përshëndetje! Dëshiroj të rezervoj në {villa}.", waArrival:"Mbërritja", waDeparture:"Largimi", waGuests:"Mysafirë", waName:"Emri", waMsg:"Mesazh",
     revKicker:"Vlerësime", revTitle:"Çfarë thonë mysafirët", revAll:"Të gjitha vlerësimet në Google",
@@ -843,8 +843,7 @@ footer h4{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(
     <div class="bm-sum" id="bmSum"></div>
     <div class="bm-err" id="bmErr2" style="margin:-6px 0 12px"></div>
     <div class="bm-act">
-      <button type="button" class="btn btn-wa" id="bmWa"><span data-i="wa"></span><span data-t="sendWa"></span></button>
-      <button type="button" class="btn btn-ghost" id="bmEm" data-t="emailBtn" style="border:1px solid var(--line)"></button>
+      <button type="button" class="btn btn-primary" id="bmWa" style="width:100%"><span data-t="sendWa"></span><span class="ar" data-i="arrow"></span></button>
     </div>
   </div>
 </div>
@@ -1177,19 +1176,17 @@ observeRv();
   const text = () => { const R = rooms[S.r], msg = $('#bmMsg').value.trim(), n = nights();
     return [T('waIntro', { villa:C.name }), '', T('bkRoom') + ': ' + tr(R.name), T('waArrival') + ': ' + fmt(S.a), T('waDeparture') + ': ' + fmt(S.b) + ' (' + T('bkNights', { n }) + ')', T('waGuests') + ': ' + S.g, T('waName') + ': ' + $('#bmName').value.trim(), $('#bmMail').value.trim() ? 'Email: ' + $('#bmMail').value.trim() : '', msg ? T('waMsg') + ': ' + msg : ''].filter(Boolean).join('\n'); };
   const ok = () => { const e2 = $('#bmErr2'); e2.textContent = !S.a || !S.b ? T('bkNeedDates') : !$('#bmName').value.trim() ? T('errName') : ''; return !e2.textContent; };
-  const toSmoobu = () => { const R = rooms[S.r]; if (!R.smoobuId) return Promise.resolve({ skip:true });
-    return fetch(BOOKING_API + '/book', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ apartmentId:R.smoobuId, arrival:iso(S.a), departure:iso(S.b), guests:S.g, name:$('#bmName').value.trim(), email:$('#bmMail').value.trim(), message:$('#bmMsg').value.trim() }) })
-      .then(r => r.json().then(j => ({ status:r.status, j }))).catch(() => ({ status:0 })); };
   const okMail = () => { const m = $('#bmMail').value.trim(); if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m)) return true; $('#bmErr2').textContent = 'Please enter your email to receive the booking confirmation.'; return false; };
-  const send = then => { $('#bmErr2').style.color = ''; if (!ok() || !okMail()) return; const w = then === 'wa' ? window.open('about:blank', '_blank') : null;
-    toSmoobu().then(res => {
-      if (res.status === 409) { if (w) w.close(); S.err = T('bkErrBooked'); $('#bmErr2').textContent = T('bkErrBooked'); return; }
-      if (res.status === 200 && res.j && res.j.ok) { const R = rooms[S.r]; R._booked = R._booked || new Set(); for (let x = new Date(S.a); x < S.b; x.setDate(x.getDate()+1)) R._booked.add(iso(x)); $('#bmErr2').style.color = 'var(--primary, #2F7A5B)'; $('#bmErr2').textContent = 'Booked! A confirmation has been sent to ' + $('#bmMail').value.trim() + '.'; }
-      if (then === 'wa') { if (w) w.location.href = wa(text()); else window.open(wa(text()), '_blank', 'noopener'); }
-      else location.href = 'mailto:' + C.email + '?subject=' + encodeURIComponent(T('bkTitle') + ' — ' + C.name) + '&body=' + encodeURIComponent(text());
-    }); };
-  $('#bmWa').onclick = () => send('wa');
-  $('#bmEm').onclick = () => send('mail');
+  let busy = false;
+  $('#bmWa').onclick = () => { const e2 = $('#bmErr2'); e2.style.color = ''; if (busy || !ok() || !okMail()) return; const R = rooms[S.r];
+    if (!R.smoobuId) { window.open(wa(text()), '_blank', 'noopener'); return; }
+    busy = true; $('#bmWa').disabled = true; e2.style.color = 'var(--muted)'; e2.textContent = 'Booking…';
+    fetch(BOOKING_API + '/book', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ apartmentId:R.smoobuId, arrival:iso(S.a), departure:iso(S.b), guests:S.g, name:$('#bmName').value.trim(), email:$('#bmMail').value.trim(), message:$('#bmMsg').value.trim() }) })
+      .then(r => r.json().then(j => ({ status:r.status, j }))).catch(() => ({ status:0 }))
+      .then(res => { busy = false; $('#bmWa').disabled = false; e2.style.color = '';
+        if (res.status === 200 && res.j && res.j.ok) { R._booked = R._booked || new Set(); for (let x = new Date(S.a); x < S.b; x.setDate(x.getDate()+1)) R._booked.add(iso(x)); e2.style.color = '#2F7A5B'; e2.textContent = 'Booked! A confirmation has been sent to ' + $('#bmMail').value.trim() + '. Payment upon arrival.'; S.a = null; S.b = null; render(); return; }
+        if (res.status === 409) { e2.textContent = T('bkErrBooked'); return; }
+        e2.textContent = 'Online booking is unavailable right now. Opening WhatsApp so you can book with us directly…'; window.open(wa(text()), '_blank', 'noopener'); }); };
   const open = () => { render(); bm.classList.add('open'); bm.scrollTop = 0; document.body.style.overflow = 'hidden'; };
   const close = () => { bm.classList.remove('open'); document.body.style.overflow = ''; };
   $('#bmX').onclick = close;
