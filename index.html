@@ -815,37 +815,8 @@ footer h4{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(
   <div class="bm-box">
     <button type="button" class="bm-x" id="bmX" aria-label="Close" data-i="x"></button>
     <h2 id="bmT" data-t="bkTitle"></h2>
-    <p class="bm-l" data-t="bkRoom"></p>
-    <div class="bm-rooms" id="bmRooms"></div>
-    <div class="bm-dates">
-      <button type="button" class="bm-d" id="bmIn"><small data-t="bkIn"></small><span></span></button>
-      <button type="button" class="bm-d" id="bmOut"><small data-t="bkOut"></small><span></span></button>
-    </div>
-    <div class="cal">
-      <div class="cal-h"><button type="button" class="cal-nav" id="calPrev" aria-label="Previous">‹</button><p id="calHint"></p><button type="button" class="cal-nav" id="calNext" aria-label="Next">›</button></div>
-      <div class="cal-ms" id="calMs"></div>
-      <div class="cal-leg">
-        <span><i style="background:#E3F1F2"></i><em data-t="bkAvail" style="font-style:normal"></em></span>
-        <span><i style="background:#FBE1DA"></i><em data-t="bkBooked" style="font-style:normal"></em></span>
-        <span><i style="background:var(--ocean)"></i><em data-t="bkYour" style="font-style:normal"></em></span>
-      </div>
-      <div class="bm-err" id="bmErr"></div>
-    </div>
-    <div class="bm-g">
-      <span class="bm-l" style="margin:0" data-t="bkGuests"></span>
-      <div class="ctl"><button type="button" id="gMinus" aria-label="−">−</button><b id="gNum">2</b><button type="button" id="gPlus" aria-label="+">+</button></div>
-    </div>
-    <div class="bm-f">
-      <label><span class="bm-l" data-t="bkName"></span><input type="text" id="bmName" autocomplete="name"></label>
-      <label><span class="bm-l" data-t="bkEmail"></span><input type="email" id="bmMail" autocomplete="email"></label>
-      <label class="full"><span class="bm-l" data-t="bkMsg"></span><textarea id="bmMsg"></textarea></label>
-    </div>
-    <div class="bm-sum" id="bmSum"></div>
-    <div class="bm-err" id="bmErr2" style="margin:-6px 0 12px"></div>
-    <div class="bm-act">
-      <button type="button" class="btn btn-wa" id="bmWa"><span data-i="wa"></span><span data-t="sendWa"></span></button>
-      <button type="button" class="btn btn-ghost" id="bmEm" data-t="emailBtn" style="border:1px solid var(--line)"></button>
-    </div>
+    <iframe id="bmFrame" title="Booking" loading="lazy" style="width:100%;height:min(78vh,760px);border:0;border-radius:14px;background:#fff"></iframe>
+    <p style="font-size:13px;color:var(--muted);margin-top:12px;text-align:center">Pay upon arrival · Instant email confirmation</p>
   </div>
 </div>
 
@@ -1120,66 +1091,14 @@ window.observeRv = () => { autoTag(); return _obs(); };
 const _obs = () => $$('.rv:not(.in)').forEach(el => { if (io) { io.observe(el); } else el.classList.add('in'); });
 observeRv();
 
-// booking modal
+// booking modal (Smoobu booking engine)
 (() => {
-  const bm = $('#bm'), rooms = C.rooms && C.rooms.length ? C.rooms : [{ name:C.unitName || C.name, guests:C.guests, price:C.priceFrom }];
-  const today = new Date(); today.setHours(0,0,0,0);
-  const iso = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-  const S = { r:0, a:null, b:null, g:2, m:new Date(today.getFullYear(), today.getMonth(), 1), err:'' };
-  const booked = d => { const s = iso(d); return (C.bookedDates || []).some(([x,y]) => s >= x && s < y); };
-  const fmt = d => d ? d.toLocaleDateString(LOCALE[lang], { weekday:'short', day:'numeric', month:'short' }) : T('bkAdd');
-  const nights = () => S.a && S.b ? Math.round((S.b - S.a) / 864e5) : 0;
-  function month(base){
-    const y = base.getFullYear(), m = base.getMonth(), first = (new Date(y,m,1).getDay() + 6) % 7, days = new Date(y,m+1,0).getDate();
-    const wd = [...Array(7)].map((_,i) => '<span class="wd">' + new Date(2024,0,1+i).toLocaleDateString(LOCALE[lang], { weekday:'short' }) + '</span>').join('');
-    let cells = '<span></span>'.repeat(first);
-    for (let d = 1; d <= days; d++) {
-      const dt = new Date(y,m,d), t = +dt; let c = '';
-      if (dt < today) c = 'past'; else if (booked(dt)) c = 'bk';
-      if (S.a && t === +S.a || S.b && t === +S.b) c = 'sel'; else if (S.a && S.b && t > S.a && t < S.b) c = 'rg';
-      cells += '<button type="button" class="' + c + '" data-d="' + iso(dt) + '"' + (c === 'past' || c === 'bk' ? ' disabled' : '') + '>' + d + '</button>';
-    }
-    const title = base.toLocaleDateString(LOCALE[lang], { month:'long', year:'numeric' });
-    return '<div class="cal-m"><h4>' + title.charAt(0).toUpperCase() + title.slice(1) + '</h4><div class="cal-g">' + wd + cells + '</div></div>';
-  }
-  function render(){
-    const R = rooms[S.r]; if (S.g > R.guests) S.g = R.guests;
-    $('#bmRooms').innerHTML = rooms.map((r,i) => '<button type="button" class="bm-room' + (i === S.r ? ' on' : '') + '" data-r="' + i + '"><b>' + esc(tr(r.name)) + '</b><span>' + T('bkUpTo', { n:r.guests }) + ' · ' + money(r.price) + ' ' + T('perNight') + '</span></button>').join('');
-    $('#bmIn span').textContent = fmt(S.a); $('#bmOut span').textContent = fmt(S.b);
-    $('#bmIn').classList.toggle('act', !S.a || !!S.b); $('#bmOut').classList.toggle('act', !!S.a && !S.b);
-    $('#calHint').textContent = S.a && !S.b ? T('bkPickOut') : T('bkPickIn');
-    $('#calMs').innerHTML = month(S.m) + month(new Date(S.m.getFullYear(), S.m.getMonth()+1, 1));
-    $('#calPrev').disabled = S.m <= new Date(today.getFullYear(), today.getMonth(), 1);
-    $('#bmErr').textContent = S.err;
-    $('#gNum').textContent = S.g; $('#gMinus').disabled = S.g <= 1; $('#gPlus').disabled = S.g >= R.guests;
-    const n = nights();
-    if (n) { const tot = n * R.price, plat = tot * (1 + C.platformCommission); $('#bmSum').innerHTML = '<span>' + T('bkNights', { n }) + ' · ' + esc(tr(R.name)) + '</span><b>' + money(tot) + '</b><small>' + T('bkSave', { s:money(plat - tot) }) + '</small>'; $('#bmSum').style.display = ''; }
-    else $('#bmSum').style.display = 'none';
-  }
-  bm.addEventListener('click', e => {
-    if (e.target === bm) return close();
-    const r = e.target.closest('[data-r]'); if (r) { S.r = +r.dataset.r; render(); return; }
-    const b = e.target.closest('.cal-g button[data-d]'); if (!b || b.disabled) return;
-    const [y,m,d] = b.dataset.d.split('-').map(Number), dt = new Date(y,m-1,d); S.err = '';
-    if (!S.a || S.b || dt <= S.a) { S.a = dt; S.b = null; }
-    else { let bad = false; for (let x = new Date(S.a); x < dt; x.setDate(x.getDate()+1)) if (booked(x)) bad = true;
-      if (bad) S.err = T('bkErrBooked'); else S.b = dt; }
-    render();
-  });
-  $('#bmIn').onclick = () => { S.a = null; S.b = null; S.err = ''; render(); };
-  $('#bmOut').onclick = () => { if (S.a) { S.b = null; render(); } };
-  $('#calPrev').onclick = () => { S.m = new Date(S.m.getFullYear(), S.m.getMonth()-1, 1); render(); };
-  $('#calNext').onclick = () => { S.m = new Date(S.m.getFullYear(), S.m.getMonth()+1, 1); render(); };
-  $('#gMinus').onclick = () => { S.g--; render(); };
-  $('#gPlus').onclick = () => { S.g++; render(); };
-  const text = () => { const R = rooms[S.r], msg = $('#bmMsg').value.trim(), n = nights();
-    return [T('waIntro', { villa:C.name }), '', T('bkRoom') + ': ' + tr(R.name), T('waArrival') + ': ' + fmt(S.a), T('waDeparture') + ': ' + fmt(S.b) + ' (' + T('bkNights', { n }) + ')', T('waGuests') + ': ' + S.g, T('waName') + ': ' + $('#bmName').value.trim(), $('#bmMail').value.trim() ? 'Email: ' + $('#bmMail').value.trim() : '', msg ? T('waMsg') + ': ' + msg : ''].filter(Boolean).join('\n'); };
-  const ok = () => { const e2 = $('#bmErr2'); e2.textContent = !S.a || !S.b ? T('bkNeedDates') : !$('#bmName').value.trim() ? T('errName') : ''; return !e2.textContent; };
-  $('#bmWa').onclick = () => { if (ok()) window.open(wa(text()), '_blank', 'noopener'); };
-  $('#bmEm').onclick = () => { if (ok()) location.href = 'mailto:' + C.email + '?subject=' + encodeURIComponent(T('bkTitle') + ' — ' + C.name) + '&body=' + encodeURIComponent(text()); };
-  const open = () => { render(); bm.classList.add('open'); bm.scrollTop = 0; document.body.style.overflow = 'hidden'; };
+  const bm = $('#bm'), fr = $('#bmFrame'), SRC = 'https://booking.smoobu.com/9A1920561';
+  const render = () => {};
+  const open = () => { if (!fr.src) fr.src = SRC; bm.classList.add('open'); bm.scrollTop = 0; document.body.style.overflow = 'hidden'; };
   const close = () => { bm.classList.remove('open'); document.body.style.overflow = ''; };
   $('#bmX').onclick = close;
+  bm.addEventListener('click', e => { if (e.target === bm) close(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && bm.classList.contains('open')) close(); });
   document.addEventListener('click', e => { const a = e.target.closest('a[href="#book"], a.wa-float'); if (!a || a.classList.contains('wa-float')) return; e.preventDefault(); if (location.hash === '#photos') history.replaceState(null, '', location.pathname); window.dispatchEvent(new Event('hashchange')); open(); }, true);
   window.renderBk = render;
